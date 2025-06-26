@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能图片滤镜编辑器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #667eea;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .upload-subtext {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .main-content {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .content-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .image-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .content-body {
+            display: flex;
+            height: calc(100vh - 200px);
+        }
+
+        .filter-panel {
+            width: 350px;
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            overflow-y: auto;
+        }
+
+        .filter-categories {
+            padding: 20px;
+        }
+
+        .category {
+            margin-bottom: 25px;
+        }
+
+        .category-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .filter-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .filter-item {
+            background: white;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .filter-item:hover {
+            border-color: #667eea;
+            transform: translateX(5px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-item.active {
+            border-color: #667eea;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .filter-name {
+            font-weight: 500;
+        }
+
+        .filter-preview-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        }
+
+        .image-area {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #ffffff;
+        }
+
+        .image-container {
+            position: relative;
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .image-display {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: all 0.3s ease;
+        }
+
+        .comparison-container {
+            position: relative;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .image-wrapper {
+            flex: 1;
+            text-align: center;
+        }
+
+        .image-label {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .comparison-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-box {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .filter-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .filter-info.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .filter-info h3 {
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .filter-info p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .filter-css {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 50px;
+            color: #667eea;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-body {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .filter-panel {
+                width: 100%;
+                max-height: 300px;
+            }
+
+            .comparison-container {
+                flex-direction: column;
+            }
+
+            .image-controls {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎨 智能图片滤镜编辑器</h1>
+        <p>上传图片，选择滤镜，实时预览效果</p>
+    </div>
+
+    <div class="upload-section" id="uploadSection">
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-content">
+                <div class="upload-icon">📸</div>
+                <div class="upload-text">点击上传图片或拖拽到此处</div>
+                <div class="upload-subtext">支持 JPG, PNG, GIF 格式，最大 10MB</div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <div class="content-header">
+            <h2>图片滤镜编辑</h2>
+            <div class="image-controls">
+                <button class="control-btn active" id="singleViewBtn">单图模式</button>
+                <button class="control-btn" id="compareViewBtn">对比模式</button>
+                <button class="control-btn" id="resetBtn">重置滤镜</button>
+                <button class="control-btn" id="downloadBtn">下载图片</button>
+                <button class="control-btn" id="newImageBtn">更换图片</button>
+            </div>
+        </div>
+
+        <div class="content-body">
+            <div class="filter-panel">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="searchInput" placeholder="搜索滤镜...">
+                </div>
+                <div class="filter-categories" id="filterCategories">
+                    <!-- 滤镜分类将由JavaScript生成 -->
+                </div>
+            </div>
+
+            <div class="image-area">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>正在处理图片...</p>
+                </div>
+
+                <div class="image-container" id="singleView">
+                    <img id="mainImage" class="image-display">
+                    <div class="filter-info" id="filterInfo">
+                        <h3 id="filterName">原图</h3>
+                        <p id="filterDesc">未应用任何滤镜</p>
+                        <div class="filter-css" id="filterCSS">filter: none;</div>
+                    </div>
+                </div>
+
+                <div class="comparison-container" id="compareView" style="display: none;">
+                    <div class="image-wrapper">
+                        <div class="image-label">原图</div>
+                        <img id="originalImage" class="comparison-image">
+                    </div>
+                    <div class="image-wrapper">
+                        <div class="image-label" id="filteredLabel">滤镜效果</div>
+                        <img id="filteredImage" class="comparison-image">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 滤镜数据按分类组织
+    const filterCategories = {
+        "经典滤镜": [
+            {name: "原图", desc: "无滤镜效果", css: "none"},
+            {name: "黑白经典", desc: "经典黑白效果，永不过时", css: "grayscale(1)"},
+            {name: "复古暖色", desc: "温暖的复古色调，适合怀旧风格", css: "sepia(0.5) contrast(1.2) brightness(1.1) saturate(1.3)"},
+            {name: "胶片质感", desc: "模拟胶片相机的质感效果", css: "contrast(1.1) brightness(1.1) saturate(1.2) sepia(0.1)"},
+            {name: "老照片", desc: "老旧照片的泛黄效果", css: "sepia(0.9) contrast(0.9) brightness(1.1)"},
+            {name: "高对比", desc: "强烈的对比效果，突出主体", css: "contrast(1.5) brightness(1.1)"}
+        ],
+        "色调调整": [
+            {name: "蓝调忧郁", desc: "深沉的蓝色调，营造忧郁氛围", css: "hue-rotate(240deg) saturate(1.2) brightness(0.9)"},
+            {name: "暖色调", desc: "温暖的色彩，营造舒适感", css: "hue-rotate(30deg) saturate(1.2) brightness(1.1)"},
+            {name: "冷色调", desc: "清冷的色彩，适合现代风格", css: "hue-rotate(180deg) saturate(1.1) brightness(1.05)"},
+            {name: "紫色梦幻", desc: "紫色调的梦幻效果", css: "hue-rotate(270deg) saturate(1.3) brightness(1.2)"},
+            {name: "绿色自然", desc: "自然的绿色调", css: "hue-rotate(90deg) saturate(1.1) brightness(1.05)"},
+            {name: "红色激情", desc: "热情的红色调", css: "hue-rotate(0deg) saturate(1.4) contrast(1.1)"}
+        ],
+        "日系风格": [
+            {name: "日系清新", desc: "清新淡雅的日系风格", css: "brightness(1.2) contrast(0.9) saturate(0.8) hue-rotate(10deg)"},
+            {name: "樱花粉", desc: "樱花般的粉色", css: "hue-rotate(330deg) saturate(1.1) brightness(1.3)"},
+            {name: "抹茶绿", desc: "抹茶般的绿色", css: "hue-rotate(95deg) saturate(0.9) brightness(1.1)"},
+            {name: "薄荷绿", desc: "清新的薄荷绿", css: "hue-rotate(120deg) saturate(1.1) brightness(1.2)"},
+            {name: "淡紫色", desc: "优雅的淡紫色调", css: "hue-rotate(280deg) saturate(0.9) brightness(1.3)"},
+            {name: "奶茶色", desc: "奶茶般的色调", css: "sepia(0.4) hue-rotate(30deg) saturate(0.9) brightness(1.1)"}
+        ],
+        "时尚潮流": [
+            {name: "Instagram风", desc: "社交媒体风格的滤镜", css: "saturate(1.2) contrast(1.1) brightness(1.05)"},
+            {name: "VSCO风格", desc: "专业摄影应用的风格", css: "contrast(0.9) brightness(1.1) saturate(0.8)"},
+            {name: "霓虹发光", desc: "霓虹灯般的发光效果", css: "saturate(2) brightness(1.3) contrast(1.2) hue-rotate(200deg)"},
+            {name: "电影胶片", desc: "电影胶片的色彩效果", css: "contrast(1.2) saturate(1.1) brightness(0.95) sepia(0.1)"},
+            {name: "鲜艳饱和", desc: "高饱和度的鲜艳色彩", css: "saturate(2) contrast(1.2)"},
+            {name: "玫瑰金", desc: "时尚的玫瑰金色", css: "sepia(0.3) hue-rotate(320deg) saturate(1.2) brightness(1.2)"},
+            {name: '赛博朋克', css: 'hue-rotate(270deg) saturate(200%) contrast(140%) brightness(110%)'},
+            {name: '蒸汽波', css: 'hue-rotate(300deg) saturate(150%) contrast(120%) brightness(105%)'},
+            {name: '日系小清新', css: 'brightness(115%) contrast(90%) saturate(110%) hue-rotate(10deg)'},
+            {name: '韩系滤镜', css: 'brightness(120%) contrast(105%) saturate(130%)'},
+            {name: '欧美风格', css: 'contrast(130%) saturate(120%) brightness(100%)'},
+            {name: '莫兰迪色', css: 'saturate(60%) brightness(110%) contrast(85%)'},
+            {name: '马卡龙色', css: 'saturate(130%) brightness(115%) contrast(95%) hue-rotate(15deg)'},
+            {name: '金属质感', css: 'contrast(140%) saturate(80%) brightness(95%) grayscale(20%)'},
+            {name: '极简黑白', css: 'grayscale(100%) contrast(110%) brightness(105%)'},
+            {name: '渐变彩虹', css: 'hue-rotate(180deg) saturate(200%) brightness(110%) contrast(110%)'},
+        ],
+        "自然风光": [
+            {name: "春天生机", desc: "春天般的生机勃勃", css: "hue-rotate(80deg) saturate(1.2) brightness(1.2)"},
+            {name: "夏日阳光", desc: "夏日阳光的温暖", css: "brightness(1.3) saturate(1.3) contrast(1.1)"},
+            {name: "秋日暖阳", desc: "秋天的温暖色调", css: "hue-rotate(15deg) saturate(1.2) brightness(1.1)"},
+            {name: "冬日清冷", desc: "冬天的清冷感觉", css: "hue-rotate(200deg) saturate(0.8) brightness(1.1)"},
+            {name: "森林绿", desc: "森林般的绿色", css: "hue-rotate(100deg) saturate(1.2) brightness(0.95)"},
+            {name: "海洋蓝", desc: "海洋般的蓝色", css: "hue-rotate(200deg) saturate(1.3) brightness(1.0)"}
+        ],
+        "艺术特效": [
+            {name: "柔和模糊", desc: "轻微的模糊效果，增加柔和感", css: "blur(1px) brightness(1.1)"},
+            {name: "朦胧美感", desc: "朦胧的美感效果", css: "blur(0.5px) brightness(1.2) saturate(0.9)"},
+            {name: "梦幻紫", desc: "梦幻般的紫色", css: "hue-rotate(275deg) saturate(1.3) brightness(1.2) blur(0.3px)"},
+            {name: "阴影深沉", desc: "深沉的阴影效果", css: "brightness(0.7) contrast(1.4)"},
+            {name: "高光闪耀", desc: "闪耀的高光效果", css: "brightness(1.4) contrast(1.2) saturate(1.1)"},
+            {name: "锐化清晰", desc: "锐化的清晰效果", css: "contrast(1.3) brightness(1.1) saturate(1.1)"}
+        ],
+        "自然美颜类": [
+            {name: '奶茶色调', desc: "", css: 'sepia(30%) saturate(120%) hue-rotate(20deg) brightness(110%)'},
+            {name: '蜜桃粉', css: 'hue-rotate(330deg) saturate(150%) brightness(110%) contrast(105%)'},
+            {name: '暖阳橘', css: 'hue-rotate(20deg) saturate(140%) brightness(115%) contrast(110%)'},
+            {name: '清新绿', css: 'hue-rotate(80deg) saturate(120%) brightness(105%)'},
+            {name: '天空蓝', css: 'hue-rotate(180deg) saturate(130%) brightness(110%)'},
+            {name: '薰衣草紫', css: 'hue-rotate(250deg) saturate(120%) brightness(105%)'},
+            {name: '奶油白', css: 'brightness(120%) contrast(90%) saturate(80%)'},
+            {name: '珊瑚粉', css: 'hue-rotate(340deg) saturate(140%) brightness(110%)'},
+            {name: '森林绿', css: 'hue-rotate(100deg) saturate(150%) brightness(90%) contrast(120%)'},
+            {name: '夕阳红', css: 'hue-rotate(10deg) saturate(160%) brightness(105%) contrast(110%)'},
+        ],
+        "复古胶片类": [
+            {name: '复古胶片', css: 'sepia(40%) contrast(120%) brightness(110%) saturate(80%)'},
+            {name: '宝丽来', css: 'contrast(110%) brightness(110%) saturate(130%) sepia(10%)'},
+            {name: '老电影', css: 'sepia(60%) contrast(130%) brightness(90%) saturate(60%)'},
+            {name: '黑白经典', css: 'grayscale(100%) contrast(120%)'},
+            {name: '棕褐色', css: 'sepia(100%) brightness(110%)'},
+            {name: '柯达色彩', css: 'contrast(115%) saturate(140%) brightness(105%) hue-rotate(5deg)'},
+            {name: '富士胶片', css: 'contrast(110%) saturate(120%) brightness(108%) hue-rotate(-5deg)'},
+            {name: '70年代', css: 'sepia(30%) contrast(125%) saturate(110%) hue-rotate(15deg)'},
+            {name: '做旧效果', css: 'sepia(50%) contrast(90%) brightness(95%) saturate(70%)'},
+            {name: '怀旧暖调', css: 'sepia(25%) hue-rotate(20deg) saturate(120%) brightness(110%)'},
+        ],
+        "艺术创意类": [
+            {name: '油画质感', css: 'contrast(130%) saturate(150%) brightness(95%)'},
+            {name: '水彩画', css: 'contrast(80%) saturate(120%) brightness(115%) blur(0.3px)'},
+            {name: '素描效果', css: 'grayscale(100%) contrast(200%) brightness(150%) invert(100%)'},
+            {name: '漫画风格', css: 'contrast(150%) saturate(200%) brightness(110%)'},
+            {name: '霓虹灯', css: 'contrast(150%) saturate(300%) brightness(120%) hue-rotate(180deg)'},
+            {name: '双重曝光', css: 'contrast(120%) brightness(130%) saturate(80%) opacity(85%)'},
+            {name: '镜面反射', css: 'contrast(110%) brightness(110%) saturate(120%)'},
+            {name: '万花筒', css: 'hue-rotate(45deg) saturate(200%) contrast(120%) brightness(110%)'},
+            {name: '光影交错', css: 'contrast(140%) brightness(90%) saturate(110%)'},
+            {name: '色彩分离', css: 'hue-rotate(90deg) saturate(200%) contrast(130%)'},
+        ],
+        "氛围情调": [
+            {name: '梦幻星空', css: 'hue-rotate(240deg) saturate(140%) brightness(85%) contrast(120%)'},
+            {name: '黄昏时分', css: 'hue-rotate(30deg) saturate(140%) brightness(110%) contrast(105%)'},
+            {name: '清晨薄雾', css: 'brightness(105%) contrast(85%) saturate(90%) blur(0.2px)'},
+            {name: '雨后彩虹', css: 'saturate(140%) brightness(115%) contrast(110%)'},
+            {name: '秋日暖阳', css: 'hue-rotate(40deg) saturate(130%) brightness(115%) contrast(105%)'},
+            {name: '冬日暖炉', css: 'hue-rotate(25deg) saturate(120%) brightness(110%) contrast(105%)'},
+            {name: '春日樱花', css: 'hue-rotate(320deg) saturate(125%) brightness(115%) contrast(95%)'},
+            {name: '夏日海洋', css: 'hue-rotate(200deg) saturate(130%) brightness(110%) contrast(105%)'},
+            {name: '星河璀璨', css: 'hue-rotate(260deg) saturate(150%) brightness(80%) contrast(140%)'},
+            {name: '月光如水', css: 'hue-rotate(210deg) saturate(80%) brightness(95%) contrast(115%)'}
+        ],
+        "光影艺术": [
+            {name: "晨曦微光", desc: "模拟清晨第一缕阳光的柔和效果", css: "brightness(1.3) hue-rotate(20deg) contrast(0.9) saturate(0.8)"},
+            {name: "黄昏剪影", desc: "强烈的明暗对比，突出轮廓", css: "brightness(0.7) contrast(1.8) saturate(0.9)"},
+            {name: "月光银辉", desc: "冷色调的月光效果", css: "brightness(0.9) hue-rotate(200deg) saturate(0.7) contrast(1.1)"},
+            {name: "霓虹夜色", desc: "城市霓虹灯的绚丽色彩", css: "hue-rotate(280deg) saturate(2) brightness(0.8) contrast(1.3)"},
+            {name: "极光幻彩", desc: "模拟北极光的奇幻色彩", css: "hue-rotate(150deg) saturate(1.8) brightness(0.9) contrast(1.2)"},
+            {name: "烛光温暖", desc: "模拟烛光的温暖色调", css: "sepia(0.4) hue-rotate(15deg) brightness(1.1) contrast(1.1)"},
+            {name: "舞台聚光", desc: "强烈的中心聚光效果", css: "brightness(1.5) contrast(1.8) saturate(1.3)"},
+            {name: "水下光影", desc: "模拟水下光线折射效果", css: "hue-rotate(180deg) brightness(0.9) contrast(0.8) saturate(0.7)"},
+            {name: "雾中朦胧", desc: "薄雾笼罩的朦胧效果", css: "brightness(1.2) contrast(0.7) saturate(0.6) blur(0.8px)"},
+            {name: "阳光穿透", desc: "强烈阳光穿透物体的效果", css: "brightness(1.8) contrast(1.5) saturate(1.2)"}
+        ],
+        "材质模拟": [
+            {name: "磨砂玻璃", desc: "模拟磨砂玻璃的质感", css: "contrast(0.9) brightness(1.1) blur(0.5px)"},
+            {name: "金属抛光", desc: "高反射的金属表面效果", css: "contrast(1.8) brightness(1.2) saturate(0.8)"},
+            {name: "水彩纸张", desc: "模拟水彩纸的纹理", css: "contrast(0.9) brightness(1.1) saturate(0.8)"},
+            {name: "油画刮刀", desc: "厚重的油画质感", css: "contrast(1.3) brightness(0.9) saturate(1.2)"},
+            {name: "丝绸光泽", desc: "光滑丝绸的反射效果", css: "brightness(1.2) contrast(1.1) saturate(1.1)"},
+            {name: "木纹质感", desc: "模拟木质纹理", css: "sepia(0.3) hue-rotate(30deg) contrast(1.1)"},
+            {name: "混凝土墙", desc: "粗糙的混凝土表面", css: "contrast(1.2) brightness(0.9) saturate(0.7)"},
+            {name: "水珠凝结", desc: "模拟表面凝结水珠的效果", css: "brightness(1.1) contrast(1.1) saturate(1.3)"},
+            {name: "毛玻璃", desc: "半透明的毛玻璃效果", css: "brightness(1.1) contrast(0.8) blur(0.7px)"},
+            {name: "皮革纹理", desc: "模拟皮革的质感", css: "sepia(0.2) contrast(1.2) brightness(0.9)"}
+        ],
+        "季节限定": [
+            {name: "初春新绿", desc: "初春嫩芽的清新绿色", css: "hue-rotate(70deg) saturate(1.3) brightness(1.2)"},
+            {name: "盛夏烈日", desc: "盛夏强烈阳光的效果", css: "brightness(1.5) contrast(1.3) saturate(1.4)"},
+            {name: "深秋枫红", desc: "深秋枫叶的红色调", css: "hue-rotate(350deg) saturate(1.5) brightness(1.1)"},
+            {name: "寒冬飘雪", desc: "寒冷冬季的蓝白色调", css: "hue-rotate(210deg) brightness(1.3) saturate(0.7)"},
+            {name: "梅雨时节", desc: "潮湿的梅雨季节效果", css: "brightness(0.9) contrast(0.8) saturate(0.7)"},
+            {name: "金秋麦浪", desc: "金色麦田的丰收色调", css: "hue-rotate(40deg) saturate(1.2) brightness(1.1)"},
+            {name: "樱花季节", desc: "樱花盛开的粉色调", css: "hue-rotate(320deg) saturate(1.4) brightness(1.3)"},
+            {name: "落叶缤纷", desc: "秋叶飘落的橙色调", css: "hue-rotate(30deg) saturate(1.3) brightness(1.1)"},
+            {name: "冰雪王国", desc: "极寒冰雪的蓝白色", css: "hue-rotate(220deg) brightness(1.4) saturate(0.6)"},
+            {name: "雨季潮湿", desc: "雨季的潮湿阴郁效果", css: "brightness(0.8) contrast(1.1) saturate(0.7)"}
+        ],
+        "情绪表达": [
+            {name: "忧郁蓝调", desc: "深沉的忧郁情绪", css: "hue-rotate(230deg) brightness(0.8) contrast(1.1)"},
+            {name: "激情红焰", desc: "热烈的情感表达", css: "hue-rotate(0deg) saturate(1.8) brightness(1.2)"},
+            {name: "平静绿意", desc: "平和宁静的氛围", css: "hue-rotate(100deg) saturate(0.9) brightness(1.0)"},
+            {name: "神秘紫雾", desc: "神秘莫测的感觉", css: "hue-rotate(270deg) brightness(0.9) saturate(1.3)"},
+            {name: "活力橙光", desc: "充满活力的效果", css: "hue-rotate(20deg) saturate(1.5) brightness(1.2)"},
+            {name: "孤独灰影", desc: "孤独寂寞的氛围", css: "grayscale(0.7) brightness(0.9)"},
+            {name: "幸福粉彩", desc: "幸福甜蜜的感觉", css: "hue-rotate(330deg) saturate(1.2) brightness(1.3)"},
+            {name: "愤怒暗红", desc: "压抑的愤怒情绪", css: "hue-rotate(355deg) brightness(0.7) contrast(1.5)"},
+            {name: "希望青空", desc: "充满希望的蓝天", css: "hue-rotate(190deg) brightness(1.3) saturate(1.1)"},
+            {name: "恐惧暗影", desc: "恐怖阴森的效果", css: "brightness(0.6) contrast(1.8) saturate(0.7)"}
+        ],
+        "城市印象": [
+            {name: "都市钢铁", desc: "现代都市的冷硬质感", css: "grayscale(0.5) contrast(1.4) brightness(0.9)"},
+            {name: "老街怀旧", desc: "老城区的怀旧色调", css: "sepia(0.4) contrast(1.1) brightness(0.95)"},
+            {name: "霓虹东京", desc: "东京夜晚的霓虹灯", css: "hue-rotate(300deg) saturate(1.8) brightness(0.9)"},
+            {name: "雾都伦敦", desc: "伦敦雾天的效果", css: "brightness(0.8) contrast(0.9) saturate(0.7)"},
+            {name: "阳光洛杉矶", desc: "加州阳光的温暖", css: "brightness(1.4) hue-rotate(15deg) saturate(1.2)"},
+            {name: "巴黎浪漫", desc: "浪漫的巴黎色调", css: "hue-rotate(330deg) saturate(1.1) brightness(1.2)"},
+            {name: "上海外滩", desc: "外滩夜景的华丽", css: "hue-rotate(240deg) brightness(0.8) saturate(1.4)"},
+            {name: "香港维港", desc: "维多利亚港夜景", css: "hue-rotate(250deg) saturate(1.5) brightness(0.85)"},
+            {name: "北京胡同", desc: "老北京胡同的色调", css: "sepia(0.3) hue-rotate(10deg) contrast(1.1)"},
+            {name: "迪拜奢华", desc: "奢华的金色迪拜", css: "hue-rotate(40deg) saturate(1.4) brightness(1.3)"}
+        ],
+        "美食诱惑": [
+            {name: "甜点诱惑", desc: "甜品的温暖色调", css: "hue-rotate(25deg) saturate(1.3) brightness(1.4)"},
+            {name: "咖啡时光", desc: "咖啡的深棕色", css: "sepia(0.5) contrast(1.2) brightness(0.9)"},
+            {name: "海鲜盛宴", desc: "海鲜的清新色调", css: "hue-rotate(180deg) brightness(1.2) saturate(1.1)"},
+            {name: "烧烤烟火", desc: "烧烤的烟熏效果", css: "sepia(0.3) brightness(0.9) contrast(1.3)"},
+            {name: "寿司新鲜", desc: "寿司的清新色彩", css: "brightness(1.3) saturate(1.2) contrast(1.1)"},
+            {name: "红酒醇香", desc: "红酒的深红色", css: "hue-rotate(350deg) brightness(0.8) saturate(1.2)"},
+            {name: "奶茶温暖", desc: "奶茶的温暖色调", css: "hue-rotate(30deg) saturate(1.1) brightness(1.3)"},
+            {name: "沙拉健康", desc: "沙拉的清新绿色", css: "hue-rotate(90deg) saturate(1.3) brightness(1.2)"},
+            {name: "巧克力浓郁", desc: "巧克力的深色调", css: "sepia(0.6) brightness(0.8) contrast(1.4)"},
+            {name: "冰淇淋夏日", desc: "冰淇淋的清凉", css: "brightness(1.5) saturate(1.4) hue-rotate(190deg)"}
+        ],
+        "科技未来": [
+            {name: "赛博空间", desc: "虚拟空间的蓝紫色", css: "hue-rotate(260deg) saturate(1.8) brightness(0.9)"},
+            {name: "全息投影", desc: "全息影像的效果", css: "hue-rotate(180deg) saturate(1.5) brightness(1.3)"},
+            {name: "数字矩阵", desc: "矩阵代码的绿色", css: "hue-rotate(120deg) saturate(2) brightness(0.8)"},
+            {name: "量子计算", desc: "量子科技的冷色调", css: "hue-rotate(210deg) brightness(1.2) saturate(1.3)"},
+            {name: "AI智能", desc: "人工智能的金属感", css: "grayscale(0.7) contrast(1.8) brightness(0.9)"},
+            {name: "纳米科技", desc: "纳米材料的质感", css: "hue-rotate(150deg) saturate(1.2) brightness(1.1)"},
+            {name: "太空探索", desc: "深空探索的色调", css: "hue-rotate(240deg) brightness(0.7) contrast(1.4)"},
+            {name: "虚拟现实", desc: "VR头显的效果", css: "hue-rotate(90deg) saturate(1.5) brightness(0.9)"},
+            {name: "机器人视觉", desc: "机器人视角", css: "grayscale(0.5) contrast(1.6) brightness(0.8)"},
+            {name: "未来城市", desc: "未来都市的光影", css: "hue-rotate(300deg) brightness(0.9) saturate(1.8)"}
+        ],
+        "自然奇观": [
+            {name: "大峡谷", desc: "美国大峡谷的色调", css: "sepia(0.3) hue-rotate(30deg) contrast(1.3)"},
+            {name: "北极光", desc: "北极光的奇幻色彩", css: "hue-rotate(160deg) saturate(1.8) brightness(0.8)"},
+            {name: "撒哈拉", desc: "撒哈拉沙漠的金色", css: "hue-rotate(40deg) saturate(1.3) brightness(1.4)"},
+            {name: "大堡礁", desc: "大堡礁的蓝色海水", css: "hue-rotate(190deg) saturate(1.5) brightness(1.1)"},
+            {name: "亚马逊", desc: "亚马逊雨林的绿色", css: "hue-rotate(110deg) saturate(1.6) brightness(0.9)"},
+            {name: "珠穆朗玛", desc: "雪山的冷峻色调", css: "brightness(1.4) contrast(1.3) saturate(0.7)"},
+            {name: "维多利亚瀑布", desc: "瀑布的水雾效果", css: "brightness(1.2) contrast(0.9) saturate(0.8)"},
+            {name: "死海漂浮", desc: "死海的高盐度效果", css: "hue-rotate(200deg) brightness(1.5) saturate(0.7)"},
+            {name: "黄石公园", desc: "地热景观的色调", css: "hue-rotate(20deg) saturate(1.4) brightness(1.2)"},
+            {name: "马尔代夫", desc: "马尔代夫的碧海", css: "hue-rotate(180deg) brightness(1.5) saturate(1.3)"}
+        ],
+        "文化符号": [
+            {name: "和风物语", desc: "日本传统风格", css: "sepia(0.2) hue-rotate(30deg) contrast(1.1)"},
+            {name: "中国红", desc: "中国传统红色", css: "hue-rotate(355deg) saturate(1.8) brightness(1.1)"},
+            {name: "印度色彩", desc: "印度的丰富色彩", css: "saturate(1.8) brightness(1.2) contrast(1.3)"},
+            {name: "非洲部落", desc: "非洲部落的暖色", css: "sepia(0.4) hue-rotate(30deg) saturate(1.3)"},
+            {name: "北欧极简", desc: "北欧的简约风格", css: "brightness(1.3) contrast(0.9) saturate(0.8)"},
+            {name: "地中海蓝", desc: "地中海的蓝色", css: "hue-rotate(200deg) saturate(1.4) brightness(1.3)"},
+            {name: "玛雅文明", desc: "玛雅的金字塔色调", css: "sepia(0.3) hue-rotate(40deg) contrast(1.4)"},
+            {name: "埃及古墓", desc: "埃及的沙漠色调", css: "sepia(0.5) hue-rotate(30deg) brightness(0.9)"},
+            {name: "希腊神话", desc: "爱琴海的蓝色", css: "hue-rotate(210deg) saturate(1.2) brightness(1.4)"},
+            {name: "波西米亚", desc: "波西米亚的丰富色彩", css: "saturate(1.6) brightness(1.2) contrast(1.1)"}
+        ],
+        "特殊效果": [
+            {name: "X光透视", desc: "模拟X光效果", css: "grayscale(1) invert(1) contrast(1.8)"},
+            {name: "红外热像", desc: "红外热成像效果", css: "hue-rotate(240deg) saturate(2) contrast(1.5)"},
+            {name: "夜视模式", desc: "夜视仪的效果", css: "hue-rotate(120deg) brightness(0.7) contrast(1.8)"},
+            {name: "水底相机", desc: "水下拍摄的效果", css: "hue-rotate(180deg) brightness(0.8) saturate(0.7)"},
+            {name: "无人机航拍", desc: "高空俯瞰效果", css: "contrast(1.3) brightness(1.2) saturate(0.9)"},
+            {name: "显微镜", desc: "显微放大的效果", css: "contrast(1.8) brightness(1.3) saturate(1.2)"},
+            {name: "鱼眼镜头", desc: "鱼眼镜头的畸变", css: "brightness(1.1) contrast(1.3) saturate(1.2)"},
+            {name: "广角畸变", desc: "广角镜头效果", css: "brightness(1.2) contrast(1.4) saturate(1.1)"},
+            {name: "慢门追焦", desc: "慢速快门效果", css: "brightness(0.9) contrast(1.1) blur(0.5px)"},
+            {name: "移轴微缩", desc: "移轴摄影效果", css: "brightness(1.3) contrast(1.2) saturate(1.1)"}
+        ],
+        "色彩实验室": [
+            {name: "三原色分离", desc: "RGB通道分离效果", css: "hue-rotate(90deg) contrast(150%) saturate(200%)"},
+            {name: "负片冲印", desc: "胶片负片效果", css: "invert(100%) contrast(90%) hue-rotate(180deg)"},
+            {name: "色相轮盘", desc: "360度色相旋转", css: "hue-rotate(180deg) saturate(150%)"},
+            {name: "互补色碰撞", desc: "强烈互补色对比", css: "hue-rotate(120deg) contrast(170%)"},
+            {name: "单色保留", desc: "保留单一颜色", css: "grayscale(80%) contrast(120%) saturate(50%)"},
+            {name: "渐变色阶", desc: "平滑的渐变过渡", css: "contrast(85%) brightness(110%)"},
+            {name: "高饱和荧光", desc: "荧光笔效果", css: "saturate(300%) brightness(120%)"},
+            {name: "低饱和灰调", desc: "莫兰迪高级灰", css: "saturate(30%) contrast(90%)"},
+            {name: "色温偏移", desc: "白平衡偏移效果", css: "sepia(20%) hue-rotate(15deg)"},
+            {name: "色彩溢出", desc: "模拟色彩溢出", css: "saturate(250%) contrast(80%)"}
+        ],
+        "材质研究": [
+            {name: "亚麻纹理", desc: "天然亚麻质感", css: "contrast(110%) brightness(95%)"},
+            {name: "金属氧化", desc: "锈蚀金属效果", css: "sepia(50%) hue-rotate(30deg)"},
+            {name: "水晶折射", desc: "棱镜折射光效", css: "brightness(130%) contrast(120%)"},
+            {name: "陶土质感", desc: "未上釉陶器", css: "sepia(40%) contrast(110%)"},
+            {name: "丝绸褶皱", desc: "绸缎光泽效果", css: "brightness(115%) saturate(90%)"},
+            {name: "磨砂金属", desc: "喷砂处理表面", css: "grayscale(40%) contrast(130%)"},
+            {name: "树皮纹理", desc: "树木表皮质感", css: "sepia(30%) contrast(120%)"},
+            {name: "鹅卵石", desc: "河滩石头质感", css: "grayscale(30%) contrast(95%)"},
+            {name: "毛毡表面", desc: "羊毛毡效果", css: "brightness(105%) blur(0.3px)"},
+            {name: "冰霜结晶", desc: "结霜表面效果", css: "brightness(140%) contrast(110%)"}
+        ],
+        "天气模拟": [
+            {name: "雷暴前夕", desc: "暴风雨前压抑感", css: "brightness(70%) contrast(130%)"},
+            {name: "沙尘暴", desc: "沙漠风沙效果", css: "sepia(60%) contrast(120%)"},
+            {name: "热带暴雨", desc: "大雨滂沱效果", css: "brightness(85%) blur(0.5px)"},
+            {name: "雾凇奇观", desc: "树挂冰晶效果", css: "brightness(150%) contrast(90%)"},
+            {name: "海市蜃楼", desc: "沙漠热浪扭曲", css: "blur(0.7px) brightness(130%)"},
+            {name: "极地暴雪", desc: "极寒暴风雪", css: "brightness(160%) contrast(80%)"},
+            {name: "火山灰", desc: "火山喷发效果", css: "grayscale(70%) sepia(30%)"},
+            {name: "彩虹尽头", desc: "雨后彩虹光晕", css: "hue-rotate(60deg) saturate(180%)"},
+            {name: "龙卷风", desc: "风暴中心效果", css: "blur(0.8px) contrast(140%)"},
+            {name: "晴空湍流", desc: "高空云层波动", css: "brightness(125%) contrast(85%)"}
+        ],
+        "生物视觉": [
+            {name: "蜜蜂复眼", desc: "多重复眼效果", css: "contrast(150%) saturate(200%)"},
+            {name: "蛇类红外", desc: "热感应视觉", css: "hue-rotate(240deg) contrast(180%)"},
+            {name: "鹰眼锐利", desc: "猛禽超强视力", css: "contrast(200%) brightness(110%)"},
+            {name: "猫头鹰夜视", desc: "夜间狩猎视觉", css: "brightness(70%) contrast(160%)"},
+            {name: "蝴蝶色觉", desc: "紫外线视觉", css: "hue-rotate(300deg) saturate(220%)"},
+            {name: "鲨鱼水感", desc: "水中运动视觉", css: "hue-rotate(200deg) contrast(120%)"},
+            {name: "青蛙动态", desc: "运动物体突出", css: "contrast(170%) saturate(150%)"},
+            {name: "壁虎吸附", desc: "微观表面视觉", css: "brightness(120%) contrast(140%)"},
+            {name: "章鱼伪装", desc: "环境融合效果", css: "saturate(80%) contrast(90%)"},
+            {name: "蜻蜓全景", desc: "超广角视觉", css: "brightness(115%) hue-rotate(10deg)"}
+        ],
+        "时间旅行": [
+            {name: "寒武纪", desc: "远古海洋色调", css: "hue-rotate(160deg) sepia(40%)"},
+            {name: "侏罗纪", desc: "恐龙时代氛围", css: "sepia(50%) hue-rotate(30deg)"},
+            {name: "冰河时期", desc: "极寒冰川世界", css: "brightness(140%) hue-rotate(220deg)"},
+            {name: "古埃及", desc: "法老王朝色调", css: "sepia(60%) contrast(110%)"},
+            {name: "中世纪", desc: "欧洲古堡氛围", css: "brightness(90%) sepia(30%)"},
+            {name: "文艺复兴", desc: "油画古典色调", css: "contrast(110%) saturate(120%)"},
+            {name: "工业革命", desc: "蒸汽时代质感", css: "grayscale(60%) sepia(20%)"},
+            {name: "1920年代", desc: "爵士时代风格", css: "sepia(25%) contrast(120%)"},
+            {name: "1980年代", desc: "复古未来主义", css: "hue-rotate(300deg) saturate(150%)"},
+            {name: "2200年", desc: "科幻未来色调", css: "hue-rotate(200deg) brightness(120%)"}
+        ],
+        "光学实验": [
+            {name: "双缝干涉", desc: "光的波动性展示", css: "brightness(130%) contrast(70%)"},
+            {name: "棱镜分光", desc: "色散光谱效果", css: "hue-rotate(90deg) saturate(200%)"},
+            {name: "偏振滤镜", desc: "消除反光效果", css: "contrast(120%) brightness(110%)"},
+            {name: "全息衍射", desc: "3D全息效果", css: "hue-rotate(180deg) saturate(180%)"},
+            {name: "红外截止", desc: "阻断红外线", css: "hue-rotate(120deg) contrast(140%)"},
+            {name: "紫外荧光", desc: "激发荧光效果", css: "hue-rotate(280deg) brightness(140%)"},
+            {name: "激光准直", desc: "高准直光束", css: "contrast(200%) brightness(130%)"},
+            {name: "光纤传输", desc: "光导纤维效果", css: "brightness(125%) hue-rotate(90deg)"},
+            {name: "黑体辐射", desc: "温度色彩变化", css: "hue-rotate(40deg) saturate(150%)"},
+            {name: "量子纠缠", desc: "超距作用效果", css: "invert(30%) contrast(150%)"}
+        ],
+        "艺术流派": [
+            {name: "印象派", desc: "莫奈风格笔触", css: "brightness(120%) blur(0.4px)"},
+            {name: "点彩派", desc: "修拉风格点彩", css: "contrast(130%) saturate(140%)"},
+            {name: "立体主义", desc: "毕加索风格", css: "contrast(150%) brightness(110%)"},
+            {name: "超现实主义", desc: "达利风格", css: "hue-rotate(30deg) saturate(130%)"},
+            {name: "表现主义", desc: "蒙克风格", css: "contrast(140%) hue-rotate(10deg)"},
+            {name: "极简主义", desc: "蒙德里安风格", css: "contrast(120%) saturate(80%)"},
+            {name: "波普艺术", desc: "安迪沃霍尔风格", css: "saturate(200%) contrast(130%)"},
+            {name: "欧普艺术", desc: "视错觉效果", css: "contrast(180%) brightness(120%)"},
+            {name: "抽象表现", desc: "波洛克风格", css: "brightness(110%) contrast(130%)"},
+            {name: "新艺术运动", desc: "穆夏风格", css: "sepia(20%) hue-rotate(350deg)"}
+        ],
+        "音乐可视化": [
+            {name: "古典交响", desc: "管弦乐层次感", css: "contrast(110%) brightness(105%)"},
+            {name: "爵士即兴", desc: "蓝调变化效果", css: "hue-rotate(220deg) saturate(120%)"},
+            {name: "摇滚现场", desc: "高能量冲击", css: "contrast(150%) brightness(120%)"},
+            {name: "电子脉冲", desc: "规律节奏闪烁", css: "brightness(130%) hue-rotate(90deg)"},
+            {name: "民谣叙事", desc: "温暖质朴色调", css: "sepia(30%) brightness(110%)"},
+            {name: "嘻哈街头", desc: "高对比度效果", css: "contrast(160%) saturate(130%)"},
+            {name: "环境音乐", desc: "氛围渐变效果", css: "brightness(105%) contrast(90%)"},
+            {name: "金属重音", desc: "强烈失真效果", css: "grayscale(50%) contrast(180%)"},
+            {name: "雷鬼律动", desc: "牙买加色彩", css: "hue-rotate(100deg) saturate(140%)"},
+            {name: "歌剧咏叹", desc: "戏剧性光影", css: "contrast(120%) brightness(95%)"}
+        ],
+        "科学幻想": [
+            {name: "曲速航行", desc: "星际旅行效果", css: "hue-rotate(240deg) brightness(130%)"},
+            {name: "虫洞穿越", desc: "时空扭曲效果", css: "blur(0.5px) hue-rotate(180deg)"},
+            {name: "反物质", desc: "负宇宙效果", css: "invert(100%) contrast(120%)"},
+            {name: "戴森球", desc: "恒星能量场", css: "brightness(150%) contrast(110%)"},
+            {name: "纳米机器人", desc: "微观修复效果", css: "contrast(140%) brightness(120%)"},
+            {name: "意识上传", desc: "数字世界效果", css: "hue-rotate(90deg) saturate(150%)"},
+            {name: "平行宇宙", desc: "多重现实叠加", css: "opacity(80%) contrast(130%)"},
+            {name: "时间冻结", desc: "瞬间凝固效果", css: "brightness(125%) saturate(90%)"},
+            {name: "引力透镜", desc: "光线弯曲效果", css: "blur(0.3px) brightness(130%)"},
+            {name: "量子泡沫", desc: "微观时空波动", css: "contrast(70%) brightness(140%)"}
+        ],
+        "极限环境": [
+            {name: "深海热泉", desc: "海底火山口", css: "hue-rotate(180deg) brightness(80%)"},
+            {name: "平流层", desc: "高空稀薄大气", css: "brightness(140%) contrast(90%)"},
+            {name: "火山熔岩", desc: "高温岩浆", css: "hue-rotate(20deg) brightness(120%)"},
+            {name: "南极冰穹", desc: "极寒干燥", css: "brightness(160%) contrast(110%)"},
+            {name: "撒哈拉正午", desc: "极端高温", css: "brightness(150%) contrast(130%)"},
+            {name: "马里亚纳", desc: "深海压力", css: "brightness(70%) hue-rotate(200deg)"},
+            {name: "太空真空", desc: "无大气层", css: "contrast(150%) brightness(130%)"},
+            {name: "核反应堆", desc: "强辐射环境", css: "hue-rotate(100deg) brightness(140%)"},
+            {name: "台风眼", desc: "风暴中心", css: "contrast(120%) brightness(90%)"},
+            {name: "洞穴生态", desc: "永久黑暗", css: "brightness(60%) contrast(140%)"}
+        ],
+        "宇宙探索": [
+            {name: "中子星脉冲", desc: "高能辐射脉冲效果", css: "contrast(200%) brightness(130%) hue-rotate(90deg)"},
+            {name: "暗物质晕", desc: "不可见物质引力效应", css: "brightness(60%) blur(0.7px) contrast(150%)"},
+            {name: "超新星爆发", desc: "恒星爆炸的光谱", css: "saturate(300%) brightness(180%)"},
+            {name: "吸积盘", desc: "黑洞吞噬物质的光环", css: "hue-rotate(280deg) contrast(170%)"},
+            {name: "引力波", desc: "时空涟漪的扭曲", css: "blur(0.5px) hue-rotate(180deg)"},
+            {name: "太阳耀斑", desc: "日冕物质抛射", css: "brightness(200%) hue-rotate(30deg)"},
+            {name: "星云诞生", desc: "恒星托儿所", css: "hue-rotate(220deg) saturate(200%)"},
+            {name: "火星尘暴", desc: "红色星球沙尘", css: "sepia(60%) hue-rotate(10deg)"},
+            {name: "柯伊伯带", desc: "冰冻天体带", css: "brightness(150%) hue-rotate(200deg)"},
+            {name: "奥尔特云", desc: "太阳系边缘", css: "brightness(70%) contrast(130%)"}
+        ],
+        "微观世界": [
+            {name: "DNA螺旋", desc: "双分子结构", css: "hue-rotate(140deg) contrast(150%)"},
+            {name: "病毒入侵", desc: "微观感染过程", css: "brightness(130%) hue-rotate(300deg)"},
+            {name: "细胞分裂", desc: "有丝分裂动态", css: "contrast(160%) brightness(110%)"},
+            {name: "线粒体", desc: "细胞能量站", css: "hue-rotate(90deg) saturate(180%)"},
+            {name: "纳米管", desc: "碳分子结构", css: "grayscale(60%) contrast(180%)"},
+            {name: "量子点", desc: "半导体晶体", css: "saturate(250%) brightness(120%)"},
+            {name: "抗体结合", desc: "免疫反应", css: "hue-rotate(40deg) contrast(170%)"},
+            {name: "叶绿体", desc: "光合作用中心", css: "hue-rotate(120deg) brightness(130%)"},
+            {name: "石墨烯", desc: "单原子层结构", css: "contrast(200%) brightness(90%)"},
+            {name: "噬菌体", desc: "病毒攻击细菌", css: "hue-rotate(270deg) saturate(160%)"}
+        ],
+        "数字抽象": [
+            {name: "像素叛乱", desc: "数字噪点革命", css: "contrast(180%) brightness(110%)"},
+            {name: "数据洪流", desc: "信息瀑布效果", css: "hue-rotate(90deg) saturate(150%)"},
+            {name: "算法生成", desc: "机器学习创作", css: "brightness(120%) contrast(130%)"},
+            {name: "区块链", desc: "分布式账本结构", css: "grayscale(70%) contrast(160%)"},
+            {name: "神经网络", desc: "深度学习模拟", css: "hue-rotate(200deg) brightness(110%)"},
+            {name: "量子比特", desc: "叠加态视觉化", css: "contrast(140%) brightness(130%)"},
+            {name: "哈希加密", desc: "密码学转换", css: "brightness(90%) contrast(190%)"},
+            {name: "递归分形", desc: "无限自相似", css: "hue-rotate(60deg) saturate(140%)"},
+            {name: "赛博格", desc: "人机融合", css: "grayscale(50%) hue-rotate(300deg)"},
+            {name: "元宇宙", desc: "虚拟世界入口", css: "brightness(140%) saturate(180%)"}
+        ],
+        "液态艺术": [
+            {name: "水银流动", desc: "重金属液态", css: "brightness(130%) contrast(110%)"},
+            {name: "墨水扩散", desc: "宣纸晕染", css: "blur(0.4px) contrast(120%)"},
+            {name: "熔玻璃", desc: "高温粘稠态", css: "hue-rotate(30deg) brightness(150%)"},
+            {name: "咖啡拉花", desc: "奶泡漩涡", css: "sepia(40%) contrast(90%)"},
+            {name: "石油彩虹", desc: "水面油膜", css: "hue-rotate(180deg) saturate(200%)"},
+            {name: "液态氮", desc: "超低温沸腾", css: "brightness(170%) hue-rotate(220deg)"},
+            {name: "岩浆喷溅", desc: "火山喷发动态", css: "hue-rotate(20deg) contrast(160%)"},
+            {name: "水墨丹青", desc: "传统国画", css: "contrast(110%) grayscale(70%)"},
+            {name: "液态金属", desc: "T-1000效果", css: "grayscale(60%) brightness(120%)"},
+            {name: "细胞质流", desc: "原生质运动", css: "hue-rotate(90deg) blur(0.3px)"}
+        ],
+        "能量形态": [
+            {name: "等离子体", desc: "第四物质态", css: "hue-rotate(240deg) brightness(140%)"},
+            {name: "静电放电", desc: "特斯拉线圈", css: "contrast(180%) brightness(130%)"},
+            {name: "核聚变", desc: "太阳核心反应", css: "brightness(200%) hue-rotate(40deg)"},
+            {name: "生物电", desc: "神经元放电", css: "hue-rotate(90deg) contrast(160%)"},
+            {name: "地磁暴", desc: "极光产生原理", css: "hue-rotate(220deg) saturate(180%)"},
+            {name: "反物质湮灭", desc: "能量释放", css: "brightness(180%) contrast(150%)"},
+            {name: "暗能量", desc: "宇宙膨胀力", css: "brightness(70%) contrast(140%)"},
+            {name: "压电效应", desc: "晶体受压发电", css: "hue-rotate(160deg) brightness(120%)"},
+            {name: "超导体", desc: "零电阻状态", css: "brightness(150%) hue-rotate(200deg)"},
+            {name: "量子隧穿", desc: "穿越势垒", css: "contrast(130%) brightness(110%)"}
+        ],
+        "建筑解构": [
+            {name: "解构主义", desc: "扎哈风格曲面", css: "brightness(110%) hue-rotate(30deg)"},
+            {name: "参数化设计", desc: "算法生成结构", css: "contrast(150%) brightness(120%)"},
+            {name: "新陈代谢派", desc: "生物生长形态", css: "hue-rotate(90deg) saturate(130%)"},
+            {name: "粗野主义", desc: "混凝土质感", css: "grayscale(80%) contrast(120%)"},
+            {name: "高技派", desc: "裸露结构", css: "brightness(110%) contrast(140%)"},
+            {name: "地域主义", desc: "本土材料", css: "sepia(40%) contrast(110%)"},
+            {name: "未来主义", desc: "动态流线", css: "hue-rotate(200deg) brightness(130%)"},
+            {name: "极简立方", desc: "安藤忠雄风格", css: "contrast(120%) brightness(105%)"},
+            {name: "生态建筑", desc: "绿色植被融合", css: "hue-rotate(120deg) saturate(110%)"},
+            {name: "数字建造", desc: "3D打印纹理", css: "grayscale(50%) contrast(160%)"}
+        ],
+        "感官联觉": [
+            {name: "味觉甜", desc: "味觉转视觉", css: "hue-rotate(330deg) brightness(120%)"},
+            {name: "听觉高频", desc: "尖锐声音", css: "contrast(160%) brightness(130%)"},
+            {name: "嗅觉花香", desc: "嗅觉可视化", css: "hue-rotate(300deg) saturate(140%)"},
+            {name: "触觉丝滑", desc: "触感转换", css: "brightness(115%) contrast(90%)"},
+            {name: "痛觉锐利", desc: "疼痛视觉化", css: "contrast(180%) hue-rotate(0deg)"},
+            {name: "温度灼热", desc: "高温色彩", css: "hue-rotate(20deg) brightness(150%)"},
+            {name: "平衡眩晕", desc: "前庭刺激", css: "blur(0.6px) hue-rotate(180deg)"},
+            {name: "时间流逝", desc: "时间感知", css: "brightness(110%) contrast(120%)"},
+            {name: "记忆模糊", desc: "回忆效果", css: "blur(0.5px) sepia(30%)"},
+            {name: "梦境扭曲", desc: "潜意识视觉", css: "hue-rotate(270deg) brightness(90%)"}
+        ],
+        "文化密码": [
+            {name: "甲骨文", desc: "商朝占卜文字", css: "sepia(80%) contrast(120%)"},
+            {name: "玛雅历", desc: "太阳石历法", css: "hue-rotate(40deg) saturate(130%)"},
+            {name: "楔形文字", desc: "泥板文书", css: "grayscale(70%) contrast(140%)"},
+            {name: "敦煌飞天", desc: "壁画矿物颜料", css: "hue-rotate(30deg) brightness(110%)"},
+            {name: "浮世绘", desc: "江户版画", css: "sepia(30%) contrast(130%)"},
+            {name: "凯尔特结", desc: "无尽纹样", css: "brightness(100%) hue-rotate(90deg)"},
+            {name: "非洲岩画", desc: "原始艺术", css: "sepia(60%) contrast(110%)"},
+            {name: "波斯细密画", desc: "宫廷艺术", css: "hue-rotate(350deg) saturate(150%)"},
+            {name: "印加结绳", desc: "奇普记事", css: "grayscale(50%) contrast(160%)"},
+            {name: "土著点画", desc: "澳洲原住民", css: "hue-rotate(20deg) brightness(120%)"}
+        ],
+        "未来生态": [
+            {name: "垂直农场", desc: "城市农业", css: "hue-rotate(120deg) saturate(130%)"},
+            {name: "碳捕获", desc: "气候解决方案", css: "grayscale(60%) brightness(110%)"},
+            {name: "生态修复", desc: "自然恢复", css: "hue-rotate(90deg) contrast(120%)"},
+            {name: "海洋牧场", desc: "可持续渔业", css: "hue-rotate(200deg) brightness(95%)"},
+            {name: "光伏森林", desc: "太阳能树", css: "brightness(130%) hue-rotate(30deg)"},
+            {name: "海绵城市", desc: "雨水管理", css: "hue-rotate(220deg) contrast(110%)"},
+            {name: "生物塑料", desc: "可降解材料", css: "hue-rotate(160deg) brightness(120%)"},
+            {name: "空气取水", desc: "沙漠技术", css: "brightness(140%) contrast(90%)"},
+            {name: "珊瑚培育", desc: "海洋复兴", css: "hue-rotate(170deg) saturate(140%)"},
+            {name: "城市蜂巢", desc: "授粉者保护", css: "sepia(20%) hue-rotate(40deg)"}
+        ],
+        "超现实": [
+            {name: "重力失效", desc: "反物理悬浮", css: "brightness(120%) hue-rotate(180deg)"},
+            {name: "时间折叠", desc: "多重时空", css: "contrast(130%) blur(0.4px)"},
+            {name: "记忆嫁接", desc: "虚假记忆", css: "sepia(50%) brightness(110%)"},
+            {name: "意识共享", desc: "思维连接", css: "hue-rotate(240deg) saturate(160%)"},
+            {name: "量子永生", desc: "平行自我", css: "contrast(150%) brightness(90%)"},
+            {name: "四维投影", desc: "高维视角", css: "brightness(130%) hue-rotate(300deg)"},
+            {name: "熵减奇迹", desc: "时间倒流", css: "invert(100%) contrast(110%)"},
+            {name: "虚空吞噬", desc: "信息缺失", css: "brightness(60%) contrast(160%)"},
+            {name: "拓扑变形", desc: "连续形变", css: "hue-rotate(90deg) blur(0.3px)"},
+            {name: "全息记忆", desc: "可触摸回忆", css: "brightness(120%) saturate(180%)"}
+        ],
+        "神秘学符号": [
+            {name: "塔罗星辰", desc: "大阿卡那牌神秘色彩", css: "hue-rotate(260deg) brightness(90%) contrast(120%)"},
+            {name: "炼金术士", desc: "点石成金的古老智慧", css: "sepia(50%) hue-rotate(40deg) saturate(130%)"},
+            {name: "占星图腾", desc: "黄道十二宫能量", css: "brightness(110%) hue-rotate(180deg) contrast(105%)"},
+            {name: "符文烙印", desc: "北欧如尼文字力量", css: "grayscale(70%) contrast(150%) brightness(95%)"},
+            {name: "水晶占卜", desc: "灵性水晶折射光", css: "hue-rotate(300deg) saturate(140%) brightness(115%)"},
+            {name: "萨满鼓声", desc: "通灵仪式的震颤", css: "sepia(30%) contrast(130%) blur(0.3px)"},
+            {name: "易经卦象", desc: "阴阳爻变矩阵", css: "grayscale(60%) brightness(110%) contrast(140%)"},
+            {name: "魔法阵图", desc: "五芒星结界", css: "hue-rotate(120deg) saturate(160%) contrast(120%)"},
+            {name: "巫毒娃娃", desc: "非洲原始巫术", css: "sepia(70%) hue-rotate(350deg) brightness(90%)"},
+            {name: "曼陀罗", desc: "宇宙能量图谱", css: "hue-rotate(90deg) contrast(150%) brightness(105%)"}
+        ],
+        "地质奇观": [
+            {name: "玄武岩柱", desc: "六边形地质奇迹", css: "grayscale(80%) contrast(130%) brightness(95%)"},
+            {name: "丹霞地貌", desc: "红色砂岩层理", css: "hue-rotate(10deg) saturate(140%) brightness(110%)"},
+            {name: "钟乳石窟", desc: "碳酸钙沉积景观", css: "sepia(30%) brightness(105%) contrast(115%)"},
+            {name: "冰川擦痕", desc: "冰河移动痕迹", css: "brightness(140%) hue-rotate(220deg) contrast(90%)"},
+            {name: "火山玄武", desc: "熔岩冷却纹理", css: "grayscale(60%) contrast(150%) brightness(100%)"},
+            {name: "盐湖镜面", desc: "高浓度盐结晶", css: "brightness(150%) contrast(85%) hue-rotate(190deg)"},
+            {name: "化石层", desc: "古生物印记", css: "sepia(60%) contrast(120%) brightness(95%)"},
+            {name: "陨石坑", desc: "天体撞击痕迹", css: "brightness(90%) contrast(140%) grayscale(50%)"},
+            {name: "翡翠矿脉", desc: "铬致色岩层", css: "hue-rotate(120deg) saturate(150%) brightness(105%)"},
+            {name: "沙漠玫瑰", desc: "石膏晶体花", css: "sepia(40%) hue-rotate(30deg) contrast(110%)"}
+        ],
+        "粒子物理": [
+            {name: "希格斯场", desc: "质量起源机制", css: "brightness(120%) contrast(130%) hue-rotate(90deg)"},
+            {name: "夸克禁闭", desc: "强相互作用力", css: "hue-rotate(300deg) saturate(180%) contrast(140%)"},
+            {name: "中微子", desc: "幽灵粒子轨迹", css: "brightness(130%) contrast(160%) grayscale(40%)"},
+            {name: "玻色凝聚", desc: "第五物质态", css: "brightness(150%) hue-rotate(200deg) saturate(120%)"},
+            {name: "弦振动", desc: "十维空间理论", css: "contrast(170%) brightness(110%) hue-rotate(60deg)"},
+            {name: "暗物质网", desc: "宇宙骨架结构", css: "brightness(80%) contrast(150%) grayscale(70%)"},
+            {name: "反粒子", desc: "镜像物质效应", css: "invert(100%) contrast(120%) hue-rotate(180deg)"},
+            {name: "超对称", desc: "理论粒子配对", css: "brightness(115%) hue-rotate(90deg) contrast(130%)"},
+            {name: "胶子雨", desc: "强相互作用", css: "hue-rotate(20deg) saturate(200%) brightness(120%)"},
+            {name: "真空涨落", desc: "量子泡沫波动", css: "contrast(140%) brightness(90%) blur(0.4px)"}
+        ],
+        "纺织艺术": [
+            {name: "云锦", desc: "南京传统提花", css: "hue-rotate(350deg) saturate(150%) brightness(110%)"},
+            {name: "缂丝", desc: "通经断纬技艺", css: "contrast(120%) brightness(105%) sepia(20%)"},
+            {name: "苗绣", desc: "少数民族图腾", css: "hue-rotate(120deg) saturate(130%) contrast(125%)"},
+            {name: "波斯毯", desc: "伊斯兰几何纹", css: "sepia(40%) hue-rotate(30deg) brightness(95%)"},
+            {name: "苏格兰格", desc: "氏族身份符号", css: "contrast(140%) brightness(100%) grayscale(30%)"},
+            {name: "蓝染", desc: "天然靛青染色", css: "hue-rotate(220deg) brightness(90%) saturate(110%)"},
+            {name: "蕾丝", desc: "欧洲宫廷工艺", css: "brightness(120%) contrast(90%) grayscale(50%)"},
+            {name: "和服绸", desc: "京都西阵织", css: "hue-rotate(300deg) saturate(120%) brightness(105%)"},
+            {name: "马赛克", desc: "拜占庭镶嵌", css: "contrast(150%) brightness(110%) saturate(130%)"},
+            {name: "流苏", desc: "动态垂坠质感", css: "brightness(115%) contrast(105%) blur(0.3px)"}
+        ],
+        "稀有元素": [
+            {name: "铱星", desc: "陨石富集元素", css: "grayscale(70%) brightness(120%) contrast(130%)"},
+            {name: "镧系", desc: "稀土金属光泽", css: "hue-rotate(160deg) saturate(140%) brightness(110%)"},
+            {name: "钚238", desc: "放射性暖光", css: "hue-rotate(40deg) brightness(130%) contrast(120%)"},
+            {name: "氦晶", desc: "超流体状态", css: "brightness(150%) hue-rotate(200deg) contrast(90%)"},
+            {name: "铑镀", desc: "高反射率表面", css: "contrast(180%) brightness(120%) grayscale(60%)"},
+            {name: "镭夜光", desc: "自发光现象", css: "brightness(130%) hue-rotate(100deg) saturate(150%)"},
+            {name: "锇立方", desc: "最密堆积晶体", css: "grayscale(80%) contrast(150%) brightness(95%)"},
+            {name: "钯催化", desc: "化学反应活性", css: "hue-rotate(300deg) saturate(130%) brightness(110%)"},
+            {name: "铯钟", desc: "原子振荡频率", css: "brightness(120%) hue-rotate(60deg) contrast(140%)"},
+            {name: "汞齐", desc: "液态金属合金", css: "brightness(110%) grayscale(50%) contrast(120%)"}
+        ],
+        "古生物": [
+            {name: "三叶虫", desc: "寒武纪霸主", css: "sepia(70%) hue-rotate(30deg) contrast(120%)"},
+            {name: "菊石化石", desc: "对数螺旋壳体", css: "grayscale(60%) brightness(105%) contrast(130%)"},
+            {name: "恐龙骨骼", desc: "中生代巨兽", css: "brightness(120%) contrast(110%) grayscale(70%)"},
+            {name: "猛犸象牙", desc: "冰河纪遗存", css: "sepia(40%) brightness(115%) contrast(105%)"},
+            {name: "始祖鸟", desc: "进化过渡形态", css: "hue-rotate(180deg) saturate(120%) brightness(95%)"},
+            {name: "叠层石", desc: "最古老生命", css: "contrast(140%) brightness(90%) hue-rotate(100deg)"},
+            {name: "剑齿虎", desc: "更新世猎手", css: "sepia(50%) hue-rotate(10deg) brightness(100%)"},
+            {name: "邓氏鱼", desc: "泥盆纪铁甲", css: "grayscale(80%) contrast(130%) brightness(95%)"},
+            {name: "翼龙翅", desc: "空中统治", css: "brightness(110%) hue-rotate(220deg) contrast(115%)"},
+            {name: "沧龙", desc: "白垩纪海怪", css: "hue-rotate(200deg) brightness(90%) saturate(110%)"}
+        ],
+        "建筑力学": [
+            {name: "悬链拱", desc: "自然受力曲线", css: "brightness(110%) contrast(120%) hue-rotate(30deg)"},
+            {name: "薄壳结构", desc: "最小曲面", css: "hue-rotate(160deg) saturate(120%) brightness(105%)"},
+            {name: "张拉整体", desc: "张力平衡", css: "contrast(150%) brightness(120%) grayscale(40%)"},
+            {name: "桁架网", desc: "空间网格", css: "brightness(115%) contrast(130%) grayscale(60%)"},
+            {name: "抗震阻尼", desc: "能量耗散", css: "blur(0.4px) contrast(120%) brightness(100%)"},
+            {name: "穹顶", desc: "万神殿结构", css: "hue-rotate(300deg) brightness(110%) contrast(105%)"},
+            {name: "悬臂梁", desc: "自由端延伸", css: "brightness(120%) contrast(140%) hue-rotate(90deg)"},
+            {name: "拱券", desc: "古罗马技术", css: "sepia(30%) contrast(120%) brightness(95%)"},
+            {name: "剪力墙", desc: "抗侧向力", css: "grayscale(70%) brightness(110%) contrast(130%)"},
+            {name: "空间桁架", desc: "大跨度结构", css: "hue-rotate(200deg) contrast(150%) brightness(105%)"}
+        ],
+        "天文现象": [
+            {name: "日冕", desc: "太阳大气层", css: "brightness(200%) contrast(110%) hue-rotate(30deg)"},
+            {name: "月虹", desc: "月光折射", css: "brightness(120%) hue-rotate(220deg) saturate(130%)"},
+            {name: "行星连珠", desc: "天体排列", css: "contrast(150%) brightness(130%) grayscale(40%)"},
+            {name: "彗尾", desc: "离子尾迹", css: "brightness(140%) hue-rotate(180deg) blur(0.5px)"},
+            {name: "食既", desc: "日全食瞬间", css: "brightness(90%) contrast(160%) hue-rotate(200deg)"},
+            {name: "气辉", desc: "高层大气发光", css: "hue-rotate(120deg) saturate(150%) brightness(110%)"},
+            {name: "引力透镜", desc: "光线弯曲", css: "blur(0.6px) contrast(130%) brightness(120%)"},
+            {name: "磁层", desc: "地球保护罩", css: "hue-rotate(240deg) brightness(130%) contrast(120%)"},
+            {name: "太阳风", desc: "带电粒子流", css: "brightness(150%) hue-rotate(40deg) saturate(140%)"},
+            {name: "潮汐锁", desc: "同步自转", css: "grayscale(80%) contrast(140%) brightness(95%)"}
+        ],
+        "化学实验": [
+            {name: "滴定终点", desc: "颜色突变", css: "hue-rotate(120deg) saturate(200%) brightness(120%)"},
+            {name: "本生焰", desc: "元素特征色", css: "brightness(130%) hue-rotate(40deg) contrast(140%)"},
+            {name: "银镜", desc: "醛基还原", css: "grayscale(90%) contrast(180%) brightness(110%)"},
+            {name: "沉淀", desc: "溶度积平衡", css: "brightness(120%) contrast(110%) blur(0.3px)"},
+            {name: "电解", desc: "氧化还原", css: "hue-rotate(270deg) brightness(140%) contrast(120%)"},
+            {name: "色谱", desc: "分离技术", css: "hue-rotate(90deg) saturate(150%) brightness(110%)"},
+            {name: "催化", desc: "反应路径", css: "contrast(160%) brightness(120%) hue-rotate(200deg)"},
+            {name: "聚合", desc: "高分子链", css: "brightness(110%) hue-rotate(300deg) saturate(130%)"},
+            {name: "晶化", desc: "有序排列", css: "contrast(140%) brightness(130%) grayscale(30%)"},
+            {name: "荧光", desc: "电子跃迁", css: "brightness(150%) hue-rotate(100deg) saturate(180%)"}
+        ],
+        "数学之美": [
+            {name: "黄金分割", desc: "斐波那契比例", css: "hue-rotate(40deg) brightness(120%) contrast(110%)"},
+            {name: "曼德勃罗", desc: "分形迭代", css: "contrast(150%) brightness(110%) hue-rotate(180deg)"},
+            {name: "拓扑环", desc: "连续变形", css: "brightness(120%) hue-rotate(300deg) saturate(130%)"},
+            {name: "四元数", desc: "三维旋转", css: "hue-rotate(90deg) contrast(140%) brightness(115%)"},
+            {name: "混沌", desc: "蝴蝶效应", css: "brightness(110%) contrast(130%) blur(0.4px)"},
+            {name: "黎曼面", desc: "复变函数", css: "hue-rotate(220deg) brightness(120%) saturate(140%)"},
+            {name: "莫比乌斯", desc: "单侧曲面", css: "grayscale(70%) contrast(160%) brightness(100%)"},
+            {name: "克莱因瓶", desc: "无定向性", css: "brightness(130%) hue-rotate(270deg) contrast(120%)"},
+            {name: "图论", desc: "网络拓扑", css: "contrast(180%) brightness(110%) grayscale(50%)"},
+            {name: "分形维", desc: "非整数维度", css: "brightness(120%) hue-rotate(60deg) saturate(150%)"}
+        ],
+        "微观经济": [
+            {name: "供需曲线", desc: "市场均衡点", css: "contrast(140%) brightness(120%) hue-rotate(90deg)"},
+            {name: "边际效应", desc: "递减规律", css: "brightness(110%) hue-rotate(300deg) saturate(130%)"},
+            {name: "完全竞争", desc: "价格接受者", css: "grayscale(80%) contrast(120%) brightness(100%)"},
+            {name: "垄断租金", desc: "市场权力", css: "hue-rotate(40deg) brightness(130%) contrast(150%)"},
+            {name: "外部性", desc: "溢出效应", css: "brightness(120%) blur(0.5px) contrast(110%)"},
+            {name: "博弈矩阵", desc: "策略互动", css: "contrast(160%) brightness(110%) grayscale(60%)"},
+            {name: "信息不对称", desc: "柠檬市场", css: "brightness(90%) contrast(140%) hue-rotate(200deg)"},
+            {name: "机会成本", desc: "替代选择", css: "hue-rotate(180deg) saturate(120%) brightness(105%)"},
+            {name: "弹性", desc: "价格敏感度", css: "brightness(130%) contrast(120%) hue-rotate(270deg)"},
+            {name: "效用函数", desc: "偏好排序", css: "hue-rotate(120deg) brightness(110%) saturate(140%)"}
+        ],
+        "宏观趋势": [
+            {name: "经济周期", desc: "繁荣与衰退", css: "brightness(120%) contrast(130%) hue-rotate(40deg)"},
+            {name: "通货膨胀", desc: "货币贬值", css: "hue-rotate(20deg) saturate(150%) brightness(130%)"},
+            {name: "菲利普斯", desc: "失业通胀", css: "contrast(160%) brightness(110%) grayscale(50%)"},
+            {name: "乘数效应", desc: "投资放大", css: "brightness(140%) hue-rotate(90deg) saturate(130%)"},
+            {name: "流动性", desc: "货币流通", css: "hue-rotate(300deg) contrast(140%) brightness(120%)"},
+            {name: "比较优势", desc: "国际贸易", css: "brightness(110%) hue-rotate(180deg) saturate(120%)"},
+            {name: "GDP", desc: "产出总量", css: "contrast(150%) brightness(120%) grayscale(40%)"},
+            {name: "基尼系数", desc: "不平等程度", css: "brightness(100%) hue-rotate(270deg) contrast(140%)"},
+            {name: "量化宽松", desc: "货币政策", css: "hue-rotate(220deg) brightness(130%) saturate(140%)"},
+            {name: "黑天鹅", desc: "极端事件", css: "grayscale(90%) contrast(180%) brightness(95%)"}
+        ],
+        "金融工具": [
+            {name: "期权定价", desc: "布莱克模型", css: "brightness(120%) contrast(140%) hue-rotate(90deg)"},
+            {name: "杠杆", desc: "风险放大", css: "hue-rotate(40deg) saturate(160%) brightness(130%)"},
+            {name: "对冲", desc: "风险抵消", css: "contrast(150%) brightness(110%) grayscale(60%)"},
+            {name: "做市", desc: "流动性提供", css: "brightness(120%) hue-rotate(300deg) saturate(130%)"},
+            {name: "套利", desc: "无风险利润", css: "hue-rotate(180deg) contrast(160%) brightness(110%)"},
+            {name: "信用违约", desc: "CDS保护", css: "brightness(90%) contrast(150%) hue-rotate(270deg)"},
+            {name: "量化交易", desc: "算法策略", css: "contrast(180%) brightness(120%) grayscale(50%)"},
+            {name: "波动率", desc: "风险衡量", css: "brightness(130%) hue-rotate(220deg) saturate(140%)"},
+            {name: "夏普比率", desc: "风险调整", css: "hue-rotate(120deg) contrast(130%) brightness(110%)"},
+            {name: "贝塔系数", desc: "系统风险", css: "brightness(120%) grayscale(70%) contrast(140%)"}
+        ],
+        "行为经济": [
+            {name: "锚定效应", desc: "初始参照点", css: "brightness(110%) contrast(130%) hue-rotate(40deg)"},
+            {name: "损失厌恶", desc: "风险偏好", css: "hue-rotate(270deg) saturate(150%) brightness(120%)"},
+            {name: "心理账户", desc: "非理性分类", css: "contrast(160%) brightness(110%) grayscale(50%)"},
+            {name: "从众行为", desc: "羊群效应", css: "brightness(120%) hue-rotate(180deg) saturate(130%)"},
+            {name: "禀赋效应", desc: "所有权溢价", css: "hue-rotate(300deg) contrast(140%) brightness(110%)"},
+            {name: "框架效应", desc: "表述方式", css: "brightness(130%) contrast(120%) blur(0.4px)"},
+            {name: "即时满足", desc: "时间偏好", css: "hue-rotate(90deg) saturate(160%) brightness(140%)"},
+            {name: "确认偏误", desc: "信息筛选", css: "brightness(110%) grayscale(80%) contrast(150%)"},
+            {name: "幸存者", desc: "选择偏差", css: "hue-rotate(220deg) brightness(120%) saturate(130%)"},
+            {name: "助推", desc: "选择设计", css: "contrast(140%) brightness(120%) hue-rotate(60deg)"}
+        ],
+        "发展经济": [
+            {name: "中等收入", desc: "转型陷阱", css: "brightness(120%) contrast(130%) hue-rotate(30deg)"},
+            {name: "人口红利", desc: "劳动力优势", css: "hue-rotate(180deg) saturate(140%) brightness(110%)"},
+            {name: "刘易斯", desc: "二元经济", css: "contrast(150%) brightness(120%) grayscale(60%)"},
+            {name: "后发优势", desc: "技术追赶", css: "brightness(130%) hue-rotate(300deg) saturate(120%)"},
+            {name: "贫困陷阱", desc: "恶性循环", css: "hue-rotate(270deg) contrast(140%) brightness(90%)"},
+            {name: "涓滴效应", desc: "扩散理论", css: "brightness(120%) blur(0.5px) contrast(110%)"},
+            {name: "包容性", desc: "普惠增长", css: "hue-rotate(120deg) saturate(130%) brightness(140%)"},
+            {name: "资源诅咒", desc: "荷兰病", css: "brightness(110%) grayscale(70%) contrast(160%)"},
+            {name: "人力资本", desc: "教育投资", css: "hue-rotate(90deg) brightness(120%) saturate(150%)"},
+            {name: "索洛模型", desc: "长期增长", css: "contrast(140%) brightness(130%) hue-rotate(220deg)"}
+        ],
+        "国际金融": [
+            {name: "汇率", desc: "购买力平价", css: "brightness(120%) contrast(140%) hue-rotate(90deg)"},
+            {name: "利率平价", desc: "无套利条件", css: "hue-rotate(300deg) saturate(150%) brightness(130%)"},
+            {name: "特里芬", desc: "美元困境", css: "contrast(160%) brightness(110%) grayscale(50%)"},
+            {name: "热钱", desc: "短期流动", css: "brightness(140%) hue-rotate(40deg) saturate(130%)"},
+            {name: "主权债务", desc: "国家信用", css: "hue-rotate(270deg) contrast(150%) brightness(120%)"},
+            {name: "货币战争", desc: "竞争贬值", css: "brightness(130%) contrast(120%) blur(0.4px)"},
+            {name: "特别提款", desc: "SDR篮子", css: "hue-rotate(180deg) saturate(140%) brightness(110%)"},
+            {name: "离岸市场", desc: "欧洲美元", css: "brightness(120%) grayscale(60%) contrast(150%)"},
+            {name: "外汇储备", desc: "干预能力", css: "hue-rotate(220deg) brightness(130%) saturate(120%)"},
+            {name: "资本管制", desc: "跨境限制", css: "contrast(140%) brightness(110%) hue-rotate(90deg)"}
+        ],
+        "经济思想": [
+            {name: "重商主义", desc: "贸易顺差", css: "sepia(50%) hue-rotate(40deg) brightness(110%)"},
+            {name: "古典", desc: "看不见的手", css: "brightness(120%) contrast(130%) grayscale(40%)"},
+            {name: "凯恩斯", desc: "需求管理", css: "hue-rotate(300deg) saturate(130%) brightness(120%)"},
+            {name: "货币主义", desc: "通胀现象", css: "contrast(150%) brightness(110%) hue-rotate(180deg)"},
+            {name: "供给学派", desc: "减税刺激", css: "brightness(130%) hue-rotate(90deg) saturate(140%)"},
+            {name: "制度", desc: "交易成本", css: "hue-rotate(270deg) contrast(140%) brightness(120%)"},
+            {name: "行为", desc: "非理性", css: "brightness(110%) blur(0.5px) contrast(130%)"},
+            {name: "发展", desc: "结构转型", css: "hue-rotate(220deg) saturate(150%) brightness(130%)"},
+            {name: "生态", desc: "可持续", css: "brightness(120%) hue-rotate(120deg) contrast(110%)"},
+            {name: "复杂", desc: "系统思维", css: "contrast(160%) brightness(110%) hue-rotate(300deg)"}
+        ]
+    };
+
+    let currentImage = null;
+    let currentFilter = "none";
+    let isCompareMode = false;
+
+    // DOM 元素
+    const uploadSection = document.getElementById('uploadSection');
+    const mainContent = document.getElementById('mainContent');
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const mainImage = document.getElementById('mainImage');
+    const originalImage = document.getElementById('originalImage');
+    const filteredImage = document.getElementById('filteredImage');
+    const singleView = document.getElementById('singleView');
+    const compareView = document.getElementById('compareView');
+    const filterInfo = document.getElementById('filterInfo');
+    const filterName = document.getElementById('filterName');
+    const filterDesc = document.getElementById('filterDesc');
+    const filterCSS = document.getElementById('filterCSS');
+    const filteredLabel = document.getElementById('filteredLabel');
+    const searchInput = document.getElementById('searchInput');
+    const loading = document.getElementById('loading');
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function () {
+        setupEventListeners();
+        renderFilterCategories();
+    });
+
+    function setupEventListeners() {
+        // 文件上传
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // 控制按钮
+        document.getElementById('singleViewBtn').addEventListener('click', () => switchViewMode(false));
+        document.getElementById('compareViewBtn').addEventListener('click', () => switchViewMode(true));
+        document.getElementById('resetBtn').addEventListener('click', resetFilter);
+        document.getElementById('downloadBtn').addEventListener('click', downloadImage);
+        document.getElementById('newImageBtn').addEventListener('click', () => {
+            uploadSection.style.display = 'block';
+            mainContent.style.display = 'none';
+        });
+
+        // 搜索
+        searchInput.addEventListener('input', handleSearch);
+
+        // 滤镜信息显示
+        singleView.addEventListener('mouseenter', () => {
+            if (currentFilter !== "none") {
+                filterInfo.classList.add('show');
+            }
+        });
+        singleView.addEventListener('mouseleave', () => {
+            filterInfo.classList.remove('show');
+        });
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    }
+
+    function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (file) {
+            handleFile(file);
+        }
+    }
+
+    function handleFile(file) {
+        if (!file.type.startsWith('image/')) {
+            alert('请选择图片文件！');
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            alert('图片大小不能超过10MB！');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            currentImage = e.target.result;
+            loadImage();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function loadImage() {
+        showLoading(true);
+
+        setTimeout(() => {
+            mainImage.src = currentImage;
+            originalImage.src = currentImage;
+            filteredImage.src = currentImage;
+
+            uploadSection.style.display = 'none';
+            mainContent.style.display = 'block';
+
+            resetFilter();
+            showLoading(false);
+        }, 500);
+    }
+
+    function showLoading(show) {
+        loading.style.display = show ? 'block' : 'none';
+        singleView.style.display = show ? 'none' : 'block';
+        compareView.style.display = show || !isCompareMode ? 'none' : 'flex';
+    }
+
+    function renderFilterCategories() {
+        const container = document.getElementById('filterCategories');
+        container.innerHTML = '';
+
+        Object.entries(filterCategories).forEach(([categoryName, filters]) => {
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'category';
+            categoryDiv.innerHTML = `
+                    <div class="category-title">${categoryName}</div>
+                    <div class="filter-list">
+                        ${filters.map(filter => `
+                            <div class="filter-item ${filter.name === '原图' ? 'active' : ''}"
+                                 data-filter="${filter.css}"
+                                 data-name="${filter.name}"
+                                 data-desc="${filter.desc}">
+                                <span class="filter-name">${filter.name}</span>
+                                <div class="filter-preview-dot" style="filter: ${filter.css};"></div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            container.appendChild(categoryDiv);
+        });
+
+        // 添加滤镜项点击事件
+        document.querySelectorAll('.filter-item').forEach(item => {
+            item.addEventListener('click', function () {
+                applyFilter(
+                    this.dataset.filter,
+                    this.dataset.name,
+                    this.dataset.desc
+                );
+
+                // 更新活跃状态
+                document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    }
+
+    function applyFilter(filterCSS, name, desc) {
+        currentFilter = filterCSS;
+
+        const filterStyle = filterCSS === 'none' ? 'none' : `filter: ${filterCSS};`;
+
+        if (isCompareMode) {
+            filteredImage.style.filter = filterCSS === 'none' ? 'none' : filterCSS;
+            filteredLabel.textContent = name;
+        } else {
+            mainImage.style.filter = filterCSS === 'none' ? 'none' : filterCSS;
+        }
+
+        // 更新滤镜信息
+        filterName.textContent = name;
+        filterDesc.textContent = desc;
+        filterCSS.textContent = filterStyle;
+    }
+
+    function switchViewMode(compareMode) {
+        isCompareMode = compareMode;
+
+        const singleBtn = document.getElementById('singleViewBtn');
+        const compareBtn = document.getElementById('compareViewBtn');
+
+        if (compareMode) {
+            singleView.style.display = 'none';
+            compareView.style.display = 'flex';
+            singleBtn.classList.remove('active');
+            compareBtn.classList.add('active');
+
+            // 确保对比模式下滤镜效果正确显示
+            filteredImage.style.filter = currentFilter === 'none' ? 'none' : currentFilter;
+        } else {
+            singleView.style.display = 'block';
+            compareView.style.display = 'none';
+            singleBtn.classList.add('active');
+            compareBtn.classList.remove('active');
+
+            // 确保单图模式下滤镜效果正确显示
+            mainImage.style.filter = currentFilter === 'none' ? 'none' : currentFilter;
+        }
+    }
+
+    function resetFilter() {
+        currentFilter = 'none';
+        mainImage.style.filter = 'none';
+        filteredImage.style.filter = 'none';
+
+        // 重置活跃状态到原图
+        document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
+        document.querySelector('.filter-item[data-name="原图"]').classList.add('active');
+
+        // 更新滤镜信息
+        filterName.textContent = '原图';
+        filterDesc.textContent = '未应用任何滤镜';
+        filterCSS.textContent = 'filter: none;';
+        filteredLabel.textContent = '原图';
+    }
+
+    function downloadImage() {
+        if (!currentImage) return;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+
+        img.onload = function () {
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            // 应用滤镜
+            if (currentFilter !== 'none') {
+                ctx.filter = currentFilter;
+            }
+
+            ctx.drawImage(img, 0, 0);
+
+            // 下载
+            const link = document.createElement('a');
+            link.download = `filtered-image-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        };
+
+        img.src = currentImage;
+    }
+
+    function handleSearch() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const filterItems = document.querySelectorAll('.filter-item');
+
+        filterItems.forEach(item => {
+            const name = item.dataset.name.toLowerCase();
+            const desc = item.dataset.desc.toLowerCase();
+            const matches = name.includes(searchTerm) || desc.includes(searchTerm);
+
+            item.style.display = matches ? 'flex' : 'none';
+        });
+
+        // 隐藏空分类
+        document.querySelectorAll('.category').forEach(category => {
+            const visibleItems = category.querySelectorAll('.filter-item[style*="flex"], .filter-item:not([style*="none"])');
+            category.style.display = visibleItems.length > 0 ? 'block' : 'none';
+        });
+    }
+</script>
+</body>
+</html>
